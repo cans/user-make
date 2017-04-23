@@ -1,0 +1,31 @@
+- debug: var="mkuser_users"
+- name: Create User(s)
+  user:
+    home: "{{item.home_dir|default(mkuser_home_base_dir + '/' + item.name)}}"
+    name: "{{item.name}}"
+    comment: "{{item.gecos|default(omit)}}"
+    shell: "{{item.shell|default('/bin/bash')}}"
+    ssh_key_comment: "{% if item.create_keypair|default(true) %}{{item.name}}@{{ansible_hostname}}{% else %}{{omit}}{% endif %}"
+    ssh_key_passphrase: "{% if item.create_keypair|default(True) %}{{item.passphrase|default(mkuser_ssh_key_passphrase)}}{% else %}{{omit}}{% endif %}"
+    ssh_key_bits: "{% if item.create_keypair|default(true) %}4096{% else %}{{omit}}{% endif %}"
+    state: "{{item.state|default('present')}}"
+  become: yes
+  with_items: "{{mkuser_users}}"
+
+- name: Add local user key to User account
+  authorized_key:
+    user: "{{item.name}}"
+    state: "present"
+    key: "{{ lookup('file', my_ssh_public_key|default('~/.ssh/id_rsa.pub')) }}"
+  become: yes
+  with_items: "{{mkuser_users}}"
+
+# - name: Create User(s)
+#   user:
+#     home: "{{item.home_dir|default(mkuser_home_base_dir + '/' + item.name)}}"
+#     name: "{{item.name}}"
+#     comment: "{{item.gecos|default('')}}"
+#     shell: "{{item.shell|default('/bin/bash')}}"
+#     state: "{{item.state|default('present')}}"
+#   when: not "{{item.create_keypair}}"
+#   with_items: "{{mkuser_users}}"

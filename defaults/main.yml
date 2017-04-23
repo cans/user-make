@@ -1,0 +1,4 @@
+---
+user_make_home_base_dir: "/home"
+user_make_ssh_key_passphrase: "{{omit}}"
+user_make_add: []
