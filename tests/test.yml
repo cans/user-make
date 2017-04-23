@@ -4,12 +4,12 @@
   roles:
     - role: user-make
       user_make_add:
-        - name: name: "johndoe"
+        - name: "johndoe"
           gecos: "John Doe,,,"
           groups: "sudo,adm"
           system: "yes"
           create_keypair: "no"
-        - name: name: "janedoe"
+        - name: "janedoe"
           gecos: "Jane Doe,,,"
           groups: "sudo,adm"
           system: "no"

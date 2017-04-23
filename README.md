@@ -1,10 +1,10 @@
 cans.user-make
 ==============
 
-Ansible role to create a given list of users
+Ansible role to create a bunch of users on target hosts
 
 
-### How doe it works
+### How does it work
 
 Each user to create has to be defined with an item as follows:
 
