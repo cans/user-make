@@ -1,4 +1,3 @@
-- debug: var="mkuser_users"
 - name: Create User(s)
   user:
     home: "{{item.home_dir|default(mkuser_home_base_dir + '/' + item.name)}}"
