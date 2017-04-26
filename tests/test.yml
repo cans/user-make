@@ -1,6 +1,12 @@
 ---
 - hosts: localhost
   remote_user: root
+  pre_tasks:
+    - name: Create SSH key collection directory
+      file:
+        dest: "~/collected-keys"
+        state: "directory"
+        mode: 0750
   roles:
     - role: user-make
       user_make_add:
@@ -8,10 +14,44 @@
           gecos: "John Doe,,,"
           groups: "sudo,adm"
           system: "yes"
-          create_keypair: "no"
+          ssh_key_create: false
         - name: "janedoe"
           gecos: "Jane Doe,,,"
           groups: "sudo,adm"
           system: "no"
-          create_keypair: "yes"
+          ssh_key_create: true
+        - name: "alice"
+          gecos: "Lewis CAROLL,,,"
+          groups: "sudo,adm"
+          system: false
+          ssh_key_create: false
+          ssh_key_download: true  # Inconsistent with the previous option
 
+  tasks:
+    - name: Ensure alice exists
+      getent:
+        database: passwd
+        key: alice
+    - name: Ensure janedoe exists
+      getent:
+        database: passwd
+        key: janedoe
+    - name: Ensure johndoe exists
+      getent:
+        database: passwd
+        key: johndoe
+    - stat:
+        path: /home/alice/.ssh/id_rsa
+      register: key
+    - fail: msg="Alice's public key exists"
+      when: key.stat.islnk is defined
+    - stat:
+        path: /home/johndoe/.ssh/id_rsa
+      register: key
+    - fail: msg="John's public key exists"
+      when: key.stat.islnk is defined
+    - stat:
+        path: /home/janedoe/.ssh/id_rsa
+      register: key
+    - fail: msg="Jane's public key does not exists"
+      when: key.stat.islnk is defined

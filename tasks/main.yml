@@ -1,30 +1,56 @@
+---
 - name: Create User(s)
   user:
-    home: "{{item.home_dir|default(mkuser_home_base_dir + '/' + item.name)}}"
+    home: "{{item.home_dir|default(user_make_home_base_dir + '/' + item.name)}}"
     name: "{{item.name}}"
     comment: "{{item.gecos|default(omit)}}"
+    generate_ssh_key: "{{ item.ssh_key_create | default(user_make_ssh_key_create) }}"
+    groups: "{{ item.groups | default(user_make_user_groups) }}"
     shell: "{{item.shell|default('/bin/bash')}}"
-    ssh_key_comment: "{% if item.create_keypair|default(true) %}{{item.name}}@{{ansible_hostname}}{% else %}{{omit}}{% endif %}"
-    ssh_key_passphrase: "{% if item.create_keypair|default(True) %}{{item.passphrase|default(mkuser_ssh_key_passphrase)}}{% else %}{{omit}}{% endif %}"
-    ssh_key_bits: "{% if item.create_keypair|default(true) %}4096{% else %}{{omit}}{% endif %}"
-    state: "{{item.state|default('present')}}"
+    ssh_key_comment: "{% if item.ssh_key_create | default(user_make_ssh_key_create) %}{{item.name}}@{{ansible_hostname}}{% else %}{{omit}}{% endif %}"
+    ssh_key_passphrase: "{% if item.ssh_key_create | default(user_make_ssh_key_create) %}{{item.passphrase|default(user_make_ssh_key_passphrase)}}{% else %}{{omit}}{% endif %}"
+    ssh_key_bits: "{% if item.ssh_key_create | default(user_make_ssh_key_create) %}4096{% else %}{{omit}}{% endif %}"
+    state: "{{item.state | default('present')}}"
+    remove: "{% if item.state | default('present') == 'absent' %}{{item.remove|default(user_make_remove)}}{% else %}{{omit}}{% endif %}"
+    system: "{{ item.system | default(user_make_system) }}"
   become: yes
-  with_items: "{{mkuser_users}}"
+  with_items: "{{user_make_users}}"
+  register: private_user_make_users_facts
 
-- name: Add local user key to User account
+- name: Add local user key to Users account
   authorized_key:
-    user: "{{item.name}}"
+    user: "{{ item.name }}"
     state: "present"
-    key: "{{ lookup('file', my_ssh_public_key|default('~/.ssh/id_rsa.pub')) }}"
+    key: "{{ lookup('file', my_ssh_public_key | default('~/.ssh/id_rsa.pub')) }}"
   become: yes
-  with_items: "{{mkuser_users}}"
+  when: item.state | default('present') == 'present'
+  with_items: "{{ user_make_users }}"
 
-# - name: Create User(s)
-#   user:
-#     home: "{{item.home_dir|default(mkuser_home_base_dir + '/' + item.name)}}"
-#     name: "{{item.name}}"
-#     comment: "{{item.gecos|default('')}}"
-#     shell: "{{item.shell|default('/bin/bash')}}"
-#     state: "{{item.state|default('present')}}"
-#   when: not "{{item.create_keypair}}"
-#   with_items: "{{mkuser_users}}"
+- name: Ensure {{ user_make_ssh_key_download_dir }} directory exists if needed
+  local_action:
+    module: file
+    path: "{{ user_make_ssh_key_download_dir }}"
+    state: "directory"
+    mode: "{{ user_make_ssh_key_download_dir_mode }}"
+  when: user_make_ssh_key_download or user_make_users|default([])|selectattr("ssh_key_download")
+
+- name: Save Users public keys to local folder
+  local_action:
+    module: copy
+    content: "{{ item['ssh_public_key'] }}"
+    dest: "{{ user_make_ssh_key_download_dir + '/' + item.item.name + '@' + ansible_hostname + '.pub' }}"
+  when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(user_make_ssh_key_create) and item.item.ssh_key_download | default(user_make_ssh_key_download)
+  with_items: "{{ private_user_make_users_facts.results }}"
+
+- name: Upload Users public key to AWS as EC2 key
+  local_action:
+    module: ec2_key
+    key_material: "{{ item['ssh_public_key'] }}"
+    name: "{{ item.item.name + '@' + ansible_hostname }}"
+    state: "present"
+    region: "{{ user_make_users.region | default(user_make_ssh_key_ec2_region) }}"
+  when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(user_make_ssh_key_create) and item.item.ssh_key_upload_to_ec2 | default(user_make_ssh_key_upload_to_ec2)
+  with_items: "{{ private_user_make_users_facts.results }}"
+
+
+# vim: syntax=yaml:ts=2:sw=2:et:
