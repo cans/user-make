@@ -1,57 +1,229 @@
 ---
-- hosts: localhost
+- hosts: servers
   remote_user: root
+  vars:
+    ssh_key_download_dir: "~/collected-keys"
+    first_user_group:
+      - name: "alpha"
+        gecos: "Alpha,,,"
+        groups: "sudo,adm"
+        system: false
+        # The two values below are inconsistent: we ask to download a
+        # public key that will not be generated. We do not want the
+        # role to fail because of that.
+        ssh_key_create: false
+        ssh_key_download: true
+      - name: "bravo"
+        gecos: "Bravo,,,"
+        system: false
+        ssh_key_create: true
+        ssh_key_download: true
+      - name: "charlie"
+        gecos: "Charlie,,,"
+        groups: "sudo,adm"
+        system: true  # Create a system user
+        ssh_key_create: false
+      - name: "delta"
+        gecos: "Delta,,,"
+        groups: "sudo,adm"
+        # system: false  # Left unspecified on purpose, default is false
+        ssh_key_create: true
+    second_user_group:
+      - name: "foxtrot"
+        gecos: "Foxtrot,,,"
+        groups: "sudo,adm"
+        system: true
+        ssh_key_create: true
+      - name: "golf"
+        gecos: "Golf,,,"
+        groups: "sudo,adm"
+        system: false
+        ssh_key_create: false
+
   pre_tasks:
     - name: Create SSH key collection directory
-      file:
-        dest: "~/collected-keys"
+      local_action:
+        module: file
+        dest: "{{ ssh_key_download_dir }}"
         state: "directory"
         mode: 0750
+
   roles:
     - role: user-make
-      user_make_add:
-        - name: "johndoe"
-          gecos: "John Doe,,,"
-          groups: "sudo,adm"
-          system: "yes"
-          ssh_key_create: false
-        - name: "janedoe"
-          gecos: "Jane Doe,,,"
-          groups: "sudo,adm"
-          system: "no"
-          ssh_key_create: true
-        - name: "alice"
-          gecos: "Lewis CAROLL,,,"
-          groups: "sudo,adm"
-          system: false
-          ssh_key_create: false
-          ssh_key_download: true  # Inconsistent with the previous option
+      user_make_ssh_key_download: false
+      user_make_ssh_key_download_dir: "{{ ssh_key_download_dir }}"
+      user_make_users: "{{ first_user_group }}"
+
+    - role: user-make
+      # We want make sure `user_make_ssh_key_download` works
+      user_make_ssh_key_download: true
+      # We want to make sure the role can create the 
+      user_make_ssh_key_download_dir: "{{ ssh_key_download_dir + '2'}}"
+      user_make_users: "{{ second_user_group }}"
 
   tasks:
-    - name: Ensure alice exists
+    # Checking on Alpha
+    # Should not have a key pair
+    - name: Ensure Alpha exists
       getent:
         database: passwd
-        key: alice
-    - name: Ensure janedoe exists
+        key: alpha
+    - stat:
+        path: /home/alpha/.ssh/id_rsa
+      become: yes
+      register: alphaskey
+    - fail: msg="Alpha's public key exists"
+      when: alphaskey.stat.islnk is defined
+
+    # Checking on Bravo
+    # Should have a key pair
+    # Key should have been downloaded
+    - name: Ensure Bravo exists
       getent:
         database: passwd
-        key: janedoe
-    - name: Ensure johndoe exists
+        key: bravo
+      register: bravos_entity
+    - fail: msg="Bravo's a system user but it should not (uid >= 1000, yet it is {{bravos_entity.ansible_facts.getent_passwd['bravo'][1]}})"
+      when: bravos_entity.ansible_facts.getent_passwd['bravo'][1] | int < 1000
+    - stat:
+        path: /home/bravo/.ssh/id_rsa
+      become: yes
+      register: bravoskey
+    - fail: msg="Bravo's public key does not exists (but it should)"
+      when: bravoskey.stat.islnk is not defined
+    - local_action:
+        module: stat
+        path: "{{ ssh_key_download_dir + '/bravo@' + ansible_hostname + '.pub' }}"
+      register: bravoscollectedkey
+    - fail: msg="Bravo's public key was not downloaded (it should have been)"
+      when: bravoscollectedkey.stat.islnk is not defined
+
+    # Checking on Charlie
+    - name: Ensure Charlie exists
       getent:
         database: passwd
-        key: johndoe
+        key: charlie
+      register: charlies_entity
+    - fail: msg="Charlie's not a system user but it should (uid < 1000 yet it is {{charlies_entity.ansible_facts.getent_passwd['charlie'][1]}})"
+      when: charlies_entity.ansible_facts.getent_passwd['charlie'][1] | int >= 1000
     - stat:
-        path: /home/alice/.ssh/id_rsa
-      register: key
-    - fail: msg="Alice's public key exists"
-      when: key.stat.islnk is defined
+        path: /home/charlie/.ssh/id_rsa
+      become: yes
+      register: charlieskey
+    - fail: msg="Charlie's public key exists (but it should not)"
+      when: charlieskey.stat.islnk is defined
+
+    # Checking on Delta
+    - name: Ensure Delta exists
+      getent:
+        database: passwd
+        key: delta
+      register: deltas_entity
+    - fail: msg="Delta's is system user but should not (uid >= 1000, yet it is {{deltas_entity.ansible_facts.getent_passwd['delta'][1]}})"
+      when: deltas_entity.ansible_facts.getent_passwd['delta'][1] | int < 1000
     - stat:
-        path: /home/johndoe/.ssh/id_rsa
-      register: key
-    - fail: msg="John's public key exists"
-      when: key.stat.islnk is defined
-    - stat:
-        path: /home/janedoe/.ssh/id_rsa
-      register: key
-    - fail: msg="Jane's public key does not exists"
-      when: key.stat.islnk is defined
+        path: /home/delta/.ssh/id_rsa
+      become: yes
+      register: deltaskey
+    - fail: msg="Delta's public key does not exists (but it should)"
+      when: deltaskey.stat.islnk is not defined
+
+    # Checking on Foxtrot
+    - local_action:
+        module: stat
+        path: "{{ ssh_key_download_dir + '2/foxtrot@' + ansible_hostname + '.pub' }}"
+      register: foxtrotcollectedkey
+    - fail: msg="Foxtrot's public key was not downloaded (it should have been)"
+      when: foxtrotcollectedkey.stat.islnk is not defined
+
+    # Checking on Golf
+    - local_action:
+        module: stat
+        path: "{{ ssh_key_download_dir + '2/golf@' + ansible_hostname + '.pub' }}"
+      register: golfcollectedkey
+    - fail: msg="Golf's public key was downloaded (it should not have been)"
+      when: golfcollectedkey.stat.islnk is defined
+
+##
+#  This second play is just to clean-up the target host
+##
+- hosts: servers
+  remote_user: root
+  vars:
+    user_make_ssh_key_download_dir: "~/collected-keys"
+    first_user_group:
+      - name: "alpha"
+        gecos: "Alpha,,,"
+        groups: "sudo,adm"
+        system: false
+        # The two values below are inconsistent: we ask to download a
+        # public key that will not be generated. We do not want the
+        # role to fail because of that.
+        ssh_key_create: false
+        ssh_key_download: true
+      - name: "bravo"
+        gecos: "Bravo,,,"
+        system: false
+        ssh_key_create: true
+        ssh_key_download: true
+      - name: "charlie"
+        gecos: "Charlie,,,"
+        groups: "sudo,adm"
+        system: true  # Create a system user
+        ssh_key_create: false
+      - name: "delta"
+        gecos: "Delta,,,"
+        groups: "sudo,adm"
+        # system: false  # Left unspecified on purpose, default is false
+        ssh_key_create: true
+    second_user_group:
+      - name: "foxtrot"
+        gecos: "Foxtrot,,,"
+        groups: "sudo,adm"
+        system: true
+        ssh_key_create: true
+      - name: "golf"
+        gecos: "Golf,,,"
+        groups: "sudo,adm"
+        system: false
+        ssh_key_create: false
+
+  pre_tasks:
+    # First group with explicit remove value
+    - set_fact:
+        "{{ item.0 | combine( {'state': item.1, 'remove': true} ) }}"
+      register: first_user_group
+      with_nested:
+        - "{{ first_user_group }}"
+        - 'absent'
+
+    - set_fact:
+        "{{ item.0 | combine( {'state': item.1} ) }}"
+      register: second_user_group
+      with_nested:
+        - "{{ second_user_group }}"
+        - 'absent'
+
+  roles:
+    # Actually removes the created user and as a bonus ensure role
+    # does not fail when a user has been deleted
+    - role: "user-make"
+      user_make_users: "{{ first_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
+
+    - role: "user-make"
+      # Second group has no explicit `remove` value, we check `user_make_remove` override works
+      user_make_remove: true
+      user_make_users: "{{ second_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
+
+  tasks:
+    - local_action:
+        module: file
+        path: "{{user_make_ssh_key_download_dir}}/"
+        state: absent
+
+    - local_action:
+        module: file
+        path: "{{user_make_ssh_key_download_dir}}2/"
+        state: absent
+
+# vim: syntax=yaml:et:ts=2:sw=4:
