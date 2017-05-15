@@ -1,6 +1,8 @@
 cans.user-make
 ==============
 
+[![Build Status](https://travis-ci.org/cans/user-make.svg?branch=master)](https://travis-ci.org/cans/user-make)
+
 Ansible role to create a bunch of users on target hosts
 
 
