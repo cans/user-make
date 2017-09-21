@@ -50,16 +50,16 @@
 
   roles:
     - role: user-make
-      user_make_ssh_key_download: false
-      user_make_ssh_key_download_dir: "{{ ssh_key_download_dir }}"
-      user_make_users: "{{ first_user_group }}"
+      usermake_ssh_key_download: false
+      usermake_ssh_key_download_dir: "{{ ssh_key_download_dir }}"
+      usermake_users: "{{ first_user_group }}"
 
     - role: user-make
-      # We want make sure `user_make_ssh_key_download` works
-      user_make_ssh_key_download: true
+      # We want make sure `usermake_ssh_key_download` works
+      usermake_ssh_key_download: true
       # We want to make sure the role can create the 
-      user_make_ssh_key_download_dir: "{{ ssh_key_download_dir + '2'}}"
-      user_make_users: "{{ second_user_group }}"
+      usermake_ssh_key_download_dir: "{{ ssh_key_download_dir + '2'}}"
+      usermake_users: "{{ second_user_group }}"
 
   tasks:
     # Checking on Alpha
@@ -150,7 +150,7 @@
 - hosts: servers
   remote_user: root
   vars:
-    user_make_ssh_key_download_dir: "~/collected-keys"
+    usermake_ssh_key_download_dir: "~/collected-keys"
     first_user_group:
       - name: "alpha"
         gecos: "Alpha,,,"
@@ -208,22 +208,22 @@
     # Actually removes the created user and as a bonus ensure role
     # does not fail when a user has been deleted
     - role: "user-make"
-      user_make_users: "{{ first_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
+      usermake_users: "{{ first_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
 
     - role: "user-make"
-      # Second group has no explicit `remove` value, we check `user_make_remove` override works
-      user_make_remove: true
-      user_make_users: "{{ second_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
+      # Second group has no explicit `remove` value, we check `usermake_remove` override works
+      usermake_remove: true
+      usermake_users: "{{ second_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
 
   tasks:
     - local_action:
         module: file
-        path: "{{user_make_ssh_key_download_dir}}/"
+        path: "{{usermake_ssh_key_download_dir}}/"
         state: absent
 
     - local_action:
         module: file
-        path: "{{user_make_ssh_key_download_dir}}2/"
+        path: "{{usermake_ssh_key_download_dir}}2/"
         state: absent
 
 # vim: syntax=yaml:et:ts=2:sw=4:

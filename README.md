@@ -2,6 +2,8 @@ cans.user-make
 ==============
 
 [![Build Status](https://travis-ci.org/cans/user-make.svg?branch=master)](https://travis-ci.org/cans/user-make)
+[![Ansible Galaxy](https://img.shields.io/badge/ansible--galaxy-cans.user--make-blue.svg?style=flat-square)](https://galaxy.ansible.com/cans/user-make)
+[![License](https://img.shields.io/badge/license-GPLv2-brightgreen.svg?style=flat-square)](LICENSE)
 
 Ansible role to create a bunch of users on target hosts
 
@@ -14,12 +16,12 @@ Each user to create has to be defined with an item as follows:
       gecos: "John Doe,,,"           (default: *omit*)
       groups: "sudo,adm"             (default: *omit*)
       ssh_key_create: false          (default: *true*)
-      ssh_key_upload_to_ec2: true    (default: *user_make_ssh_key_upload_to_ec2*)
-      ssh_key_download: true         (default: *user_make_ssh_key_download*)
+      ssh_key_upload_to_ec2: true    (default: *usermake_ssh_key_upload_to_ec2*)
+      ssh_key_download: true         (default: *usermake_ssh_key_download*)
       system: false                  (default: *false*)
-      upload_my_key: false           (default: *user_make_upload_ssh_key_to_target*)
-      remove: false                  (default: *omit* or *user_make_remove*)
-      home_dir: "/home/jdoe"         (default: *user_make_home_base_dir/name*)
+      upload_my_key: false           (default: *usermake_upload_ssh_key_to_target*)
+      remove: false                  (default: *omit* or *usermake_remove*)
+      home_dir: "/home/jdoe"         (default: *usermake_home_base_dir/name*)
 
 Here is the meaning of each varbiable found in the item:
 
@@ -33,7 +35,7 @@ Here is the meaning of each varbiable found in the item:
 - `ssh_key_create`: whether to generate a SSH key pair for the new user;
 - `ssh_key_download`: whether to download the user's generated SSH
   public key to a folder on the local machine (see also the
-  `user_make_ssh_key_download_dir` defined below).
+  `usermake_ssh_key_download_dir` defined below).
 - `ssh_key_upload_to_ec2`: whether to upload the user's generated SSH
   public key to AWS EC2 key management system.
 - `state`: whether to create ) or delete () the user indicated with the
@@ -63,34 +65,34 @@ Role Variables <a name="role-variables"></a>
 --------------
 
 All the variable names used in this role are namespaced with the prefix
-`user_make_`.
+`usermake_`.
 
-- `user_make_home_base_dir`: let's you override the path of the directory
+- `usermake_home_base_dir`: let's you override the path of the directory
   where users home are created (default: `/home`);
-- `user_make_remove`: whether to remove users home directory when they
+- `usermake_remove`: whether to remove users home directory when they
   are deleted (default: *false*);
-- `user_make_ssh_key_create`: whether to create an ssh key pair for the
+- `usermake_ssh_key_create`: whether to create an ssh key pair for the
   new users by default (default: *true*);
-- `user_make_ssh_key_download`: whether to download created users' ssh
+- `usermake_ssh_key_download`: whether to download created users' ssh
   keys locally;
-- `user_make_ssh_key_download_dir`: the directory where to store downloaded
+- `usermake_ssh_key_download_dir`: the directory where to store downloaded
   public SSH keys (default: *`collected-keys`*);
-- `user_make_ssh_key_download_dir_mode`: the mode of the directory where
+- `usermake_ssh_key_download_dir_mode`: the mode of the directory where
   to store downloaded public SSH keys (default: *0750*);
-- `user_make_ssh_key_passphrase`: the default passphrases to encrypt ssh
+- `usermake_ssh_key_passphrase`: the default passphrases to encrypt ssh
   private keys. It is not recommanded to rely on this. You should provide
   passphrases by other means. (default: *omit* [no passphrase]);
-- `user_make_system`: whether the create users should be system users
+- `usermake_system`: whether the create users should be system users
   by default (default: *false*);
-- `user_make_upload_ssh_key_to_target`: whether to upload the local user's
+- `usermake_upload_ssh_key_to_target`: whether to upload the local user's
   SSH public key to the target host. Useful if you plan to perform tasks
   as that user in the next tasks or roles of your playbook (default: *true*);
-- `user_make_upload_ssh_key_file`: when `user_make_upload_ssh_key_to_target`
+- `usermake_upload_ssh_key_file`: when `usermake_upload_ssh_key_to_target`
   or a user's item `upload_my_key` value is `true`, points to the file where
   read the public key to upload (default: *~/.ssh/id_rsa.pub*);
-- `user_make_user_groups`: the groups to assign the created users to by
+- `usermake_user_groups`: the groups to assign the created users to by
   default (default: *omit*);
-- `user_make_users`: the list of users to create, defined with items as
+- `usermake_users`: the list of users to create, defined with items as
   described above (default: *[]*);
 
 
@@ -108,7 +110,7 @@ Creating some users:
     - hosts: servers
       roles:
          - role: cans.user-make
-           user_make_users:
+           usermake_users:
              - name: "alice"
                groups: "sudo,adm"
                system: "no"
@@ -123,7 +125,7 @@ Deleting some users:
     - hosts: servers
       roles:
         - role: cans.user-make
-          user_make_users:
+          usermake_users:
             - name: "alice"
               state: "absent"
               remove: true  # Remove all users files

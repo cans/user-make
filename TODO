@@ -6,15 +6,15 @@ TODO list for the cans.user-make Ansible role
   folder depending on the user. I would not go much further than that
   though. If managing complex SSH access policy by dispatching keys to
   different folders is needed so they can be consumed by other roles or
-  playbooks (cf. `cans.ssh-access`) then a specialized role should be
+  playbooks (cf. `cans.ssh-authorize`) then a specialized role should be
   devised I think;
-- Find a way to not create the directory `user_make_ssh_key_download_dir`
+- Find a way to not create the directory `usermake_ssh_key_download_dir`
   when it is not required. It may be created anyways, _e.g._ when all
   users have the state *'absent'*;
   Tryed something like this which is both overly complex and brittle:
 
-      (user_make_users | default([]) | map(attribute='state') | default('present') | reject('equalto', 'absent') | list | length > 0 and
-       (user_make_ssh_key_download or user_make_users | default([]) | map(attribute='ssh_key_download') | select | list | length > 0))
+      (usermake_users | default([]) | map(attribute='state') | default('present') | reject('equalto', 'absent') | list | length > 0 and
+       (usermake_ssh_key_download or usermake_users | default([]) | map(attribute='ssh_key_download') | select | list | length > 0))
 
 - Integration testing with EC2 (?!);
 - Remove SSH public keys from EC2 when user is deleted;

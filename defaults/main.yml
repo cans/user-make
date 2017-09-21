@@ -1,13 +1,13 @@
 ---
-user_make_home_base_dir: "/home"
-user_make_remove: false
-user_make_ssh_key_create: false
-user_make_ssh_key_download: false
-user_make_ssh_key_download_dir: "collected-keys"  # Ensure this directory exists
-user_make_ssh_key_download_dir_mode: 0700
-user_make_ssh_key_passphrase: "{{omit}}"
-user_make_ssh_key_upload_to_ec2: false
-user_make_system: false
-user_make_upload_ssh_key_file: "~/.ssh/id_rsa.pub"
-user_make_user_groups: "{{omit}}"
-user_make_users: []
+usermake_home_base_dir: "/home"
+usermake_remove: false
+usermake_ssh_key_create: false
+usermake_ssh_key_download: false
+usermake_ssh_key_download_dir: "collected-keys"  # Ensure this directory exists
+usermake_ssh_key_download_dir_mode: 0700
+usermake_ssh_key_passphrase: "{{omit}}"
+usermake_ssh_key_upload_to_ec2: false
+usermake_system: false
+usermake_upload_ssh_key_file: "~/.ssh/id_rsa.pub"
+usermake_user_groups: "{{omit}}"
+usermake_users: []
