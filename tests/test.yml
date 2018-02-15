@@ -57,92 +57,93 @@
     - role: user-make
       # We want make sure `usermake_ssh_key_download` works
       usermake_ssh_key_download: true
-      # We want to make sure the role can create the 
+      # We want to make sure the role can create the
       usermake_ssh_key_download_dir: "{{ ssh_key_download_dir + '2'}}"
       usermake_users: "{{ second_user_group }}"
 
   tasks:
     # Checking on Alpha
     # Should not have a key pair
-    - name: Ensure Alpha exists
+    - name: "Ensure Alpha exists and is a regular user (uid >= 1000)"
       getent:
         database: passwd
         key: alpha
-    - stat:
+      register: alphas_entity
+      failed_when: alphas_entity.ansible_facts.getent_passwd['alpha'][1] | int < 1000
+    - name: "Check Alpha's SSH key was *not* generated"
+      stat:
         path: /home/alpha/.ssh/id_rsa
       become: yes
       register: alphaskey
-    - fail: msg="Alpha's public key exists"
-      when: alphaskey.stat.islnk is defined
+      failed_when: alphaskey.stat.islnk is defined
 
     # Checking on Bravo
     # Should have a key pair
     # Key should have been downloaded
-    - name: Ensure Bravo exists
+    - name: "Ensure Bravo exists and is a regular user (uid >= 1000)"
       getent:
         database: passwd
         key: bravo
       register: bravos_entity
-    - fail: msg="Bravo's a system user but it should not (uid >= 1000, yet it is {{bravos_entity.ansible_facts.getent_passwd['bravo'][1]}})"
-      when: bravos_entity.ansible_facts.getent_passwd['bravo'][1] | int < 1000
-    - stat:
+      failed_when: bravos_entity.ansible_facts.getent_passwd['bravo'][1] | int < 1000
+    - name: Ensure Bravo's SSH key was generated
+      stat:
         path: /home/bravo/.ssh/id_rsa
       become: yes
       register: bravoskey
-    - fail: msg="Bravo's public key does not exists (but it should)"
-      when: bravoskey.stat.islnk is not defined
-    - local_action:
+      failed_when: bravoskey.stat.islnk is not defined
+    - name: "Ensure Bravo's public key was downloaded"
+      local_action:
         module: stat
         path: "{{ ssh_key_download_dir + '/bravo@' + ansible_hostname + '.pub' }}"
       register: bravoscollectedkey
-    - fail: msg="Bravo's public key was not downloaded (it should have been)"
-      when: bravoscollectedkey.stat.islnk is not defined
+      failed_when: bravoscollectedkey.stat.islnk is not defined
 
     # Checking on Charlie
-    - name: Ensure Charlie exists
+    - name: "Ensure Charlie exists and is a system user"
       getent:
         database: passwd
         key: charlie
       register: charlies_entity
-    - fail: msg="Charlie's not a system user but it should (uid < 1000 yet it is {{charlies_entity.ansible_facts.getent_passwd['charlie'][1]}})"
-      when: charlies_entity.ansible_facts.getent_passwd['charlie'][1] | int >= 1000
-    - stat:
+      # Charlie's not a system user but it should (uid < 1000 yet it is {{charlies_entity.ansible_facts.getent_passwd['charlie'][1]}})"
+      failed_when: charlies_entity.ansible_facts.getent_passwd['charlie'][1] | int >= 1000
+    - name: "Ensure Charlie's SSH key was not generated"
+      stat:
         path: /home/charlie/.ssh/id_rsa
       become: yes
       register: charlieskey
-    - fail: msg="Charlie's public key exists (but it should not)"
-      when: charlieskey.stat.islnk is defined
+      # Charlie's public key exists (but it should not)
+      failed_when: charlieskey.stat.islnk is defined
 
     # Checking on Delta
-    - name: Ensure Delta exists
+    - name: "Ensure Delta exists and is a regular user (uid >= 1000)"
       getent:
         database: passwd
         key: delta
       register: deltas_entity
-    - fail: msg="Delta's is system user but should not (uid >= 1000, yet it is {{deltas_entity.ansible_facts.getent_passwd['delta'][1]}})"
-      when: deltas_entity.ansible_facts.getent_passwd['delta'][1] | int < 1000
-    - stat:
+      failed_when: deltas_entity.ansible_facts.getent_passwd['delta'][1] | int < 1000
+    - name: "Ensure Delta's SSH key was generated"
+      stat:
         path: /home/delta/.ssh/id_rsa
       become: yes
       register: deltaskey
-    - fail: msg="Delta's public key does not exists (but it should)"
-      when: deltaskey.stat.islnk is not defined
+      failed_when: deltaskey.stat.islnk is not defined
 
     # Checking on Foxtrot
-    - local_action:
+    - name: "Ensure Foxtrot's public key was downloaded (it should have been)"
+      local_action:
         module: stat
         path: "{{ ssh_key_download_dir + '2/foxtrot@' + ansible_hostname + '.pub' }}"
       register: foxtrotcollectedkey
-    - fail: msg="Foxtrot's public key was not downloaded (it should have been)"
-      when: foxtrotcollectedkey.stat.islnk is not defined
+      failed_when: foxtrotcollectedkey.stat.islnk is not defined
 
     # Checking on Golf
-    - local_action:
+    - name: "Golf's public key was downloaded (it should not have been)"
+      local_action:
         module: stat
         path: "{{ ssh_key_download_dir + '2/golf@' + ansible_hostname + '.pub' }}"
       register: golfcollectedkey
-    - fail: msg="Golf's public key was downloaded (it should not have been)"
-      when: golfcollectedkey.stat.islnk is defined
+      failed_when: golfcollectedkey.stat.islnk is defined
 
 ##
 #  This second play is just to clean-up the target host
@@ -190,14 +191,16 @@
 
   pre_tasks:
     # First group with explicit remove value
-    - set_fact:
+    - name: "Update tests fixtures to tests removal"
+      set_fact:
         "{{ item.0 | combine( {'state': item.1, 'remove': true} ) }}"
       register: first_user_group
       with_nested:
         - "{{ first_user_group }}"
         - 'absent'
 
-    - set_fact:
+    - name: "Update tests fixtures to tests deletion"
+      set_fact:
         "{{ item.0 | combine( {'state': item.1} ) }}"
       register: second_user_group
       with_nested:
@@ -216,14 +219,13 @@
       usermake_users: "{{ second_user_group.results | map(attribute='ansible_facts._raw_params') | list }}"
 
   tasks:
-    - local_action:
+    - name: "Clean-up downloaded keys directory"
+      local_action:
         module: file
-        path: "{{usermake_ssh_key_download_dir}}/"
+        path: "{{ item }}"
         state: absent
-
-    - local_action:
-        module: file
-        path: "{{usermake_ssh_key_download_dir}}2/"
-        state: absent
+      with_items:
+        - "{{usermake_ssh_key_download_dir}}/"
+        - "{{usermake_ssh_key_download_dir}}2/"
 
 # vim: syntax=yaml:et:ts=2:sw=4:

@@ -1,0 +1,61 @@
+version: 2
+
+jobs:
+  build:
+    working_directory: ~/user-make
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          TEST_REPORTS_DIR: ~/test-reports
+    steps:
+      - checkout
+
+      - run:
+          name: Create required directories
+          command: |
+             mkdir -p $TEST_REPORTS_DIR/ansible-lint.log ~/.virtualenvs ~/.ssh
+             # One needs to concateante here any files that can alter the virtualenv in a way:
+             #   - setup.py: for the endpoints installed in $VIRTUAL_ENV/bin
+             #   - requirements.txt
+             #   - dev-requirements.txt
+             # Since we do a develop install of the code itself (cf. the '-e .' in dev-requirments.txt)
+             # it does not matter.
+             cat tests/requirements.txt tests/requirements.yml > circleci-requirements.txt
+             # Note that if the workflow is split, you will need to have the file `venv/circleci-requirements.txt`
+             # passed from one build job to the other, either through caching or using workspaces.
+             echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDmmXp3kl731C6y0M+7dzUEyt7bpvhelePj6MSsm0hvoIoHqWtNjFxWGWAAN2Kh1WJL4yxotx3NN6zjofUZG3VK9NiXY29olYhJyvBsFhKCc13MxxCnlbOheney1fuPjlRwPwhYC1TFSyg3IK0JbIQyWFGagnWVQrjDeF/kff2q1Q== WEAK RSA KEY USED FOR TESTS / PRIVATE KEY DELETED" > ~/.ssh/id_rsa.pub
+
+      - restore_cache:
+          key: v1-dependency-cache-{{ checksum "circleci-requirements.txt" }}
+
+      - run:
+          name: Install dependencies
+          command: |
+            if [ -d "${HOME}/.virtualenvs/user-make"  ]
+            then
+                :
+            else
+                pushd ~/.virtualenvs
+                python -m venv user-make
+                popd
+                . ~/.virtualenvs/user-make/bin/activate
+                pip install --upgrade "pip>=9.0.1"
+                pip install --upgrade -r tests/requirements.txt
+                ansible-galaxy install -r tests/requirements.yml -p tests/roles
+            fi
+
+      - save_cache:
+          key: v1-dependency-cache-{{ checksum "circleci-requirements.txt" }}
+          paths:
+            - ~/.virtualenvs
+            - ~/user-make/tests/roles
+
+      - run:
+          name: Run tests
+          command: |
+            . ~/.virtualenvs/user-make/bin/activate
+            tests/run-checks.sh
+            ansible-playbook -i tests/inventory tests/test.yml --connection=local
+
+
+# vim: et:sw=2:syntax=yaml:ts=2:
