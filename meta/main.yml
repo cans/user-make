@@ -1,7 +1,6 @@
 galaxy_info:
   author: Nicolas CANIART
   description: Simple Role to create a given list of users
-  company:
 
   issue_tracker_url: https://github.com/cans/user-make/issues
   license: GPLv2
@@ -10,7 +9,7 @@ galaxy_info:
   github_branch: master
 
   platforms:
-  - name: Debian  # Only tested there, report your successes 
+  - name: Debian  # Only tested there, report your successes
     versions:
     - jessie
     - sid
