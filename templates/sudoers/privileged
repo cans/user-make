@@ -1,0 +1,3 @@
+# Generated with Ansible -- DO NOT EDIT
+# User rules for {{ item.name }}
+{{ item.name }} ALL=(ALL) {% if item.passwordless_sudo | default(usermake_sudoer_passwordless) %}NOPASSWD:{% endif %}ALL

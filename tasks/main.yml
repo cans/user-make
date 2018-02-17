@@ -1,4 +1,13 @@
 ---
+- name: Ensure {{ usermake_ssh_key_download_dir }} directory exists if needed
+  local_action:
+    module: file
+    path: "{{ usermake_ssh_key_download_dir }}"
+    state: "directory"
+    mode: "{{ usermake_ssh_key_download_dir_mode }}"
+  when: 'usermake_ssh_key_download or usermake_users|default([])|selectattr("ssh_key_download")'
+  run_once: true
+
 - name: Create User(s)
   user:
     home: "{{item.home_dir|default(usermake_home_base_dir + '/' + item.name)}}"
@@ -26,13 +35,13 @@
   when: item.state | default('present') == 'present'
   with_items: "{{ usermake_users }}"
 
-- name: Ensure {{ usermake_ssh_key_download_dir }} directory exists if needed
-  local_action:
-    module: file
-    path: "{{ usermake_ssh_key_download_dir }}"
-    state: "directory"
-    mode: "{{ usermake_ssh_key_download_dir_mode }}"
-  when: usermake_ssh_key_download or usermake_users|default([])|selectattr("ssh_key_download")
+- name: Give sudoer privileges to the user
+  template:
+    src: "sudoers/privileged"
+    dest: "{{ usermake_sudoer_dir }}/{{ item.name }}"
+    mode: "0400"
+  when: 'item.sudoer | default(usermake_sudoer)'
+  with_items: "{{ usermake_users }}"
 
 - name: Save Users public keys to local folder
   local_action:

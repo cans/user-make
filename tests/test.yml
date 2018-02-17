@@ -1,64 +1,24 @@
 ---
 - hosts: servers
   remote_user: root
-  vars:
-    ssh_key_download_dir: "~/collected-keys"
-    first_user_group:
-      - name: "alpha"
-        gecos: "Alpha,,,"
-        groups: "sudo,adm"
-        system: false
-        # The two values below are inconsistent: we ask to download a
-        # public key that will not be generated. We do not want the
-        # role to fail because of that.
-        ssh_key_create: false
-        ssh_key_download: true
-      - name: "bravo"
-        gecos: "Bravo,,,"
-        system: false
-        ssh_key_create: true
-        ssh_key_download: true
-      - name: "charlie"
-        gecos: "Charlie,,,"
-        groups: "sudo,adm"
-        system: true  # Create a system user
-        ssh_key_create: false
-      - name: "delta"
-        gecos: "Delta,,,"
-        groups: "sudo,adm"
-        # system: false  # Left unspecified on purpose, default is false
-        ssh_key_create: true
-    second_user_group:
-      - name: "foxtrot"
-        gecos: "Foxtrot,,,"
-        groups: "sudo,adm"
-        system: true
-        ssh_key_create: true
-      - name: "golf"
-        gecos: "Golf,,,"
-        groups: "sudo,adm"
-        system: false
-        ssh_key_create: false
+  vars_files:
+    - vars/all.yml
 
   pre_tasks:
-    - name: Create SSH key collection directory
-      local_action:
-        module: file
-        dest: "{{ ssh_key_download_dir }}"
-        state: "directory"
-        mode: 0750
+    # Only required if target host does not have sudo installed.
+    - name: Create fake sudoers directory
+      file:
+        dest: "{{ usermake_sudoer_dir }}"
+        state: directory
 
   roles:
     - role: user-make
       usermake_ssh_key_download: false
-      usermake_ssh_key_download_dir: "{{ ssh_key_download_dir }}"
       usermake_users: "{{ first_user_group }}"
 
     - role: user-make
       # We want make sure `usermake_ssh_key_download` works
       usermake_ssh_key_download: true
-      # We want to make sure the role can create the
-      usermake_ssh_key_download_dir: "{{ ssh_key_download_dir + '2'}}"
       usermake_users: "{{ second_user_group }}"
 
   tasks:
@@ -95,7 +55,7 @@
     - name: "Ensure Bravo's public key was downloaded"
       local_action:
         module: stat
-        path: "{{ ssh_key_download_dir + '/bravo@' + ansible_hostname + '.pub' }}"
+        path: "{{ usermake_ssh_key_download_dir + '/bravo@' + ansible_hostname + '.pub' }}"
       register: bravoscollectedkey
       failed_when: bravoscollectedkey.stat.islnk is not defined
 
@@ -133,7 +93,7 @@
     - name: "Ensure Foxtrot's public key was downloaded (it should have been)"
       local_action:
         module: stat
-        path: "{{ ssh_key_download_dir + '2/foxtrot@' + ansible_hostname + '.pub' }}"
+        path: "{{ usermake_ssh_key_download_dir + '/foxtrot@' + ansible_hostname + '.pub' }}"
       register: foxtrotcollectedkey
       failed_when: foxtrotcollectedkey.stat.islnk is not defined
 
@@ -141,53 +101,37 @@
     - name: "Golf's public key was downloaded (it should not have been)"
       local_action:
         module: stat
-        path: "{{ ssh_key_download_dir + '2/golf@' + ansible_hostname + '.pub' }}"
+        path: "{{ usermake_ssh_key_download_dir + '/golf@' + ansible_hostname + '.pub' }}"
       register: golfcollectedkey
       failed_when: golfcollectedkey.stat.islnk is defined
+
+    # Checking on Hotel
+    - name: "Hotel should have a sudoer file"
+      stat:
+        path: "{{ usermake_sudoer_dir }}/hotel"
+      become: true
+      register: hotelsudoerfile
+      failed_when: not hotelsudoerfile|success
+
+    # Checking on India
+    - name: "Hotel should have a sudoer file"
+      lineinfile:
+        path: "{{ usermake_sudoer_dir }}/india"
+        regexp: ".*NOPASSWD:.*"
+        line: "india ALL=(ALL) NOPASSWD:ALL"
+      check_mode: yes
+      become: true
+      register: indiasudoerfile
+      failed_when: not indiasudoerfile|success or indiasudoerfile|changed
+
 
 ##
 #  This second play is just to clean-up the target host
 ##
 - hosts: servers
   remote_user: root
-  vars:
-    usermake_ssh_key_download_dir: "~/collected-keys"
-    first_user_group:
-      - name: "alpha"
-        gecos: "Alpha,,,"
-        groups: "sudo,adm"
-        system: false
-        # The two values below are inconsistent: we ask to download a
-        # public key that will not be generated. We do not want the
-        # role to fail because of that.
-        ssh_key_create: false
-        ssh_key_download: true
-      - name: "bravo"
-        gecos: "Bravo,,,"
-        system: false
-        ssh_key_create: true
-        ssh_key_download: true
-      - name: "charlie"
-        gecos: "Charlie,,,"
-        groups: "sudo,adm"
-        system: true  # Create a system user
-        ssh_key_create: false
-      - name: "delta"
-        gecos: "Delta,,,"
-        groups: "sudo,adm"
-        # system: false  # Left unspecified on purpose, default is false
-        ssh_key_create: true
-    second_user_group:
-      - name: "foxtrot"
-        gecos: "Foxtrot,,,"
-        groups: "sudo,adm"
-        system: true
-        ssh_key_create: true
-      - name: "golf"
-        gecos: "Golf,,,"
-        groups: "sudo,adm"
-        system: false
-        ssh_key_create: false
+  vars_files:
+    - vars/all.yml
 
   pre_tasks:
     # First group with explicit remove value
@@ -222,10 +166,8 @@
     - name: "Clean-up downloaded keys directory"
       local_action:
         module: file
-        path: "{{ item }}"
+        path: "{{ usermake_ssh_key_download_dir }}"
         state: absent
-      with_items:
-        - "{{usermake_ssh_key_download_dir}}/"
-        - "{{usermake_ssh_key_download_dir}}2/"
+
 
 # vim: syntax=yaml:et:ts=2:sw=4:

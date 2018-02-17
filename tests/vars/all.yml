@@ -1,0 +1,50 @@
+---
+# Override to not write in random or read-only places
+usermake_ssh_key_download_dir: "{{ playbook_dir }}/collected-keys"
+usermake_sudoer_dir: "{{ playbook_dir }}/sudoers.d"
+# The users we will create to test the role.
+first_user_group:
+  - name: "alpha"
+    gecos: "Alpha,,,"
+    groups: "sudo,adm"
+    system: false
+    # The two values below are inconsistent: we ask to download a
+    # public key that will not be generated. We do not want the
+    # role to fail because of that.
+    ssh_key_create: false
+    ssh_key_download: true
+  - name: "bravo"
+    gecos: "Bravo,,,"
+    system: false
+    ssh_key_create: true
+    ssh_key_download: true
+  - name: "charlie"
+    gecos: "Charlie,,,"
+    groups: "sudo,adm"
+    system: true  # Create a system user
+    ssh_key_create: false
+  - name: "delta"
+    gecos: "Delta,,,"
+    groups: "sudo,adm"
+    # system: false  # Left unspecified on purpose, default is false
+    ssh_key_create: true
+second_user_group:
+  - name: "foxtrot"
+    gecos: "Foxtrot,,,"
+    groups: "sudo,adm"
+    system: true
+    ssh_key_create: true
+  - name: "golf"
+    gecos: "Golf,,,"
+    groups: "sudo,adm"
+    system: false
+    ssh_key_create: false
+  - name: "hotel"
+    system: false
+    sudoer: true
+  - name: "india"
+    system: false
+    sudoer: true
+    passwordless_sudo: true
+
+
