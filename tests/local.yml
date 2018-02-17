@@ -9,6 +9,7 @@
         image: "python:3.6-stretch"
         groups:
           - servers
+
   roles:
     - role: chrismeyersfsu.provision_docker
       provision_docker_inventory: "{{inventory}}"

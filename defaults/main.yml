@@ -7,7 +7,12 @@ usermake_ssh_key_download_dir: "collected-keys"  # Ensure this directory exists
 usermake_ssh_key_download_dir_mode: 0700
 usermake_ssh_key_passphrase: "{{omit}}"
 usermake_ssh_key_upload_to_ec2: false
+usermake_sudoer: false
+usermake_sudoer_dir: "/etc/sudoers.d"
+usermake_sudoer_passwordless: false
 usermake_system: false
 usermake_upload_ssh_key_file: "~/.ssh/id_rsa.pub"
 usermake_user_groups: "{{omit}}"
 usermake_users: []
+
+# vim: et:sw=2:syntax=yaml:ts=2:
