@@ -1,0 +1,35 @@
+---
+- hosts: servers
+  name: "Local user key upload test suite"
+  remote_user: root
+  vars_files:
+    - vars/all.yml
+
+  roles:
+    - role: user-make
+      usermake_ssh_key_download: false
+      usermake_upload_ssh_key_to_target: false
+      # Ensures we fail if any attempt to read the file is made.
+      usermake_upload_ssh_key_file: "/some/fantasy/path/to/make/sure/we/fail/if/the/file/is/read"
+      usermake_users: "{{ third_user_group }}"
+    - role: user-make
+      usermake_ssh_key_download: false
+      usermake_upload_ssh_key_to_target: false
+      usermake_users: "{{ forth_user_group }}"
+
+  tasks:
+    - name: "Kilo should have not have an authorized_keys file"
+      stat:
+        path: "{{ '~kilo'| expanduser + '/.ssh/authorized_keys' }}"
+      register: kilo_authorizedkeys_file
+      failed_when: not kilo_authorizedkeys_file|success or kilo_authorizedkeys_file.stat.exists
+
+    - name: "Lima should have an authorized_keys file"
+      lineinfile:
+        path: "{{ '~lima' | expanduser + '/.ssh/authorized_keys' }}"
+        regexp: "^ssh-rsa.*"
+        line: "{{ lookup('file', usermake_upload_ssh_key_file | expanduser) }}"
+      check_mode: yes
+      become: true
+      register: lima_authorizedkeys_file
+      failed_when: not lima_authorizedkeys_file|success or lima_authorizedkeys_file|changed

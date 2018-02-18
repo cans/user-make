@@ -162,6 +162,12 @@ You might also want to have a look at the tests found in
 examples of this role.
 
 
+Todo
+----
+
+Implement integration testing for AWS key upload.
+
+
 License
 -------
 

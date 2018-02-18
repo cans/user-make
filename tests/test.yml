@@ -1,5 +1,6 @@
 ---
 - hosts: servers
+  name: "Basic user creation function checks"
   remote_user: root
   vars_files:
     - vars/all.yml
@@ -114,7 +115,7 @@
       failed_when: not hotelsudoerfile|success
 
     # Checking on India
-    - name: "Hotel should have a sudoer file"
+    - name: "India should have a sudoer file"
       lineinfile:
         path: "{{ usermake_sudoer_dir }}/india"
         regexp: ".*NOPASSWD:.*"
@@ -125,10 +126,17 @@
       failed_when: not indiasudoerfile|success or indiasudoerfile|changed
 
 
+- import_playbook: "key-upload.yml"
+  tags:
+    - all
+    - key-upload
+
+
 ##
 #  This second play is just to clean-up the target host
 ##
 - hosts: servers
+  name: "Clean-up"
   remote_user: root
   vars_files:
     - vars/all.yml
