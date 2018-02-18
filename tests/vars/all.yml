@@ -47,4 +47,19 @@ second_user_group:
     sudoer: true
     passwordless_sudo: true
 
+third_user_group:
+  - name: "juliett"
+    system: false
+    sudoer: false
+    upload_my_key: false
+
+forth_user_group:
+  - name: "kilo"
+    system: false
+    sudoer: false
+    upload_my_key: false
+  - name: "lima"
+    system: false
+    sudoer: false
+    upload_my_key: true
 

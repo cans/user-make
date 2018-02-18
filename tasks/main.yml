@@ -30,9 +30,9 @@
   authorized_key:
     user: "{{ item.name }}"
     state: "present"
-    key: "{{ lookup('file', my_ssh_public_key | default('~/.ssh/id_rsa.pub')) }}"
+    key: "{{ lookup('file', usermake_upload_ssh_key_file|expanduser) }}"
   become: yes
-  when: item.state | default('present') == 'present'
+  when: item.state | default('present') == 'present' and item.upload_my_key | default(usermake_upload_ssh_key_to_target)
   with_items: "{{ usermake_users }}"
 
 - name: Give sudoer privileges to the user

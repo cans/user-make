@@ -1,6 +1,29 @@
 Running the tests
 =================
 
+
+Specificities of this role
+--------------------------
+
+
+This role requires that the local user (YOU!) has a SSH public key
+available somewhere as, part of this role features, is its ability
+to upload that key to the newly created user's account.
+
+By default it looks for a key in `~/.ssh/id_rsa.pub`. You can
+either specify another key location using the role's
+``usermake_upload_ssh_key_file`` variable::
+
+    $ ansible-playbook tests/local.yml --extra-vars "usermake_upload_ssh_key_file=<some other location>"
+
+Or skip the related tests altogether using the `key-upload` tag::
+
+    $ ansible-playbook tests/local.yml --skip-tags key-upload
+
+
+Setup your test environment
+---------------------------
+
 If you want to run the tests locally, you will need to:
 
 
