@@ -1,6 +1,8 @@
 ---
 # Override to not write in random or read-only places
 usermake_ssh_key_download_dir: "{{ playbook_dir }}/collected-keys"
+# Override `usermake_sudoer_dir' because on many CI systems `/etc/sudoers.d'
+# is not writeable.
 usermake_sudoer_dir: "{{ playbook_dir }}/sudoers.d"
 # The users we will create to test the role.
 first_user_group:
@@ -62,4 +64,18 @@ forth_user_group:
     system: false
     sudoer: false
     upload_my_key: true
+
+fifth_user_group:
+  - name: "mike"
+    ssh_key_download: true
+    ssh_key_create: true
+    sudoer: false
+    system: false
+    upload_my_key: false
+  - name: "november"
+    ssh_key_create: true
+    ssh_key_download: false
+    sudoer: false
+    system: false
+    upload_my_key: false
 

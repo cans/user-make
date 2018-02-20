@@ -31,6 +31,7 @@
         key: alpha
       register: alphas_entity
       failed_when: alphas_entity.ansible_facts.getent_passwd['alpha'][1] | int < 1000
+
     - name: "Check Alpha's SSH key was *not* generated"
       stat:
         path: /home/alpha/.ssh/id_rsa
@@ -130,6 +131,12 @@
   tags:
     - all
     - key-upload
+
+
+- import_playbook: "key-download.yml"
+  tags:
+    - all
+    - key-download
 
 
 ##
