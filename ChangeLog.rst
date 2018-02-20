@@ -20,12 +20,20 @@ Added:
 Changed:
 ~~~~~~~~
 
-* Changed
+Fixed:
+~~~~~~
+
+* Fixed 
+
+
+Version v1.1.2 -- 2018-02-20
+----------------------------
 
 Fixed:
 ~~~~~~
 
-* Fixed
+* Role when used with user delegation would also delegate local tasks
+  to that user (issue #6)
 
 
 Version v1.1.1 -- 2018-02-17
@@ -35,7 +43,7 @@ Fixed:
 ~~~~~~
 
 * Role would always try to upload the local user's key to the newly
-  created remote user account, even if asked not to;
+  created remote user account, even if asked not to (issue #4);
 
 
 Version v1.1.0 -- 2018-02-16

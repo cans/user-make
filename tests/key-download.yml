@@ -1,0 +1,73 @@
+---
+- hosts: servers
+  name: "Remote user key download test suite"
+  remote_user: root
+  vars_files:
+    - vars/all.yml
+
+  roles:
+    - role: user-make
+      usermake_ssh_key_download: false
+      usermake_upload_ssh_key_to_target: false
+      usermake_users: "{{ fifth_user_group }}"
+
+  tasks:
+    - name: "Mike should have is key downloaded"
+      local_action:
+        module: stat
+        path: "{{ usermake_ssh_key_download_dir }}/mike@{{ ansible_hostname }}.pub"
+      register: mike_local_key_file
+      failed_when: not mike_local_key_file|success or not mike_local_key_file.stat.exists
+
+    - name: "November should not have his key downloaded"
+      local_action:
+        module: stat
+        path: "{{ usermake_ssh_key_download_dir }}/november@{{ ansible_hostname }}.pub"
+      register: november_local_key_file
+      failed_when: not november_local_key_file|success or november_local_key_file.stat.exists
+
+    - name: "Clean up local SSH key directory"
+      local_action:
+        module: file
+        path: "{{ usermake_ssh_key_download_dir }}"
+        state: absent
+
+
+- hosts: servers
+  name: "Remote user key download test suite when role called with user delegation (regression tests for issue #6)"
+  # `remote_user` does not seemed to be honored when using docker
+  # See e.g. https://github.com/ansible/ansible/issues/13388
+  remote_user: admin
+  vars_files:
+    - vars/all.yml
+
+  roles:
+    - role: user-make
+      usermake_ssh_key_download: false
+      usermake_upload_ssh_key_to_target: false
+      usermake_users: "{{ fifth_user_group }}"
+      become: true
+
+  tasks:
+    - name: "Mike should have had his key downloaded"
+      local_action:
+        module: stat
+        path: "{{ usermake_ssh_key_download_dir }}/mike@{{ ansible_hostname }}.pub"
+      register: mike_local_key_file
+      failed_when: not mike_local_key_file|success or not mike_local_key_file.stat.exists
+
+    - name: "November should not have had his key downloaded"
+      local_action:
+        module: stat
+        path: "{{ usermake_ssh_key_download_dir }}/november@{{ ansible_hostname }}.pub"
+      register: november_local_key_file
+      failed_when: not november_local_key_file|success or november_local_key_file.stat.exists
+
+    - name:
+      local_action:
+        module: file
+        path: "{{ usermake_ssh_key_download_dir }}"
+        state: absent
+
+
+# vim: et:sw=2:syntax=yaml:ts=2:

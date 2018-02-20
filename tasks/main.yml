@@ -5,8 +5,9 @@
     path: "{{ usermake_ssh_key_download_dir }}"
     state: "directory"
     mode: "{{ usermake_ssh_key_download_dir_mode }}"
-  when: 'usermake_ssh_key_download or usermake_users|default([])|selectattr("ssh_key_download")'
+  when: "usermake_ssh_key_download or usermake_users|default([])|selectattr('ssh_key_download', 'defined')|list|length > 0"
   run_once: true
+  become: false  # This local action should never be delegate to another user
 
 - name: Create User(s)
   user:
@@ -50,6 +51,7 @@
     dest: "{{ usermake_ssh_key_download_dir + '/' + item.item.name + '@' + ansible_hostname + '.pub' }}"
   when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(usermake_ssh_key_create) and item.item.ssh_key_download | default(usermake_ssh_key_download)
   with_items: "{{ private_usermake_users_facts.results }}"
+  become: false  # This local action should never be delegate to another user
 
 - name: Upload Users public key to AWS as EC2 key
   local_action:
