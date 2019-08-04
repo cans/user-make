@@ -1,3 +1,4 @@
-ansible>=2.4.0
-ansible-lint>=3.4.20
-docker-py
+ansible>=2.8.0,<2.9
+ansible-lint~=4.1
+docker-py; python_version < '2.7'
+docker; python_version >= '2.7'
