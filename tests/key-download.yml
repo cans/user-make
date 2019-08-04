@@ -63,7 +63,7 @@
       register: november_local_key_file
       failed_when: november_local_key_file is not success or november_local_key_file.stat.exists
 
-    - name:
+    - name: "Remove remotely generated key collection directory"
       local_action:
         module: file
         path: "{{ usermake_ssh_key_download_dir }}"
