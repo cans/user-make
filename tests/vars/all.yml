@@ -15,39 +15,47 @@ first_user_group:
     # role to fail because of that.
     ssh_key_create: false
     ssh_key_download: true
+    upload_my_key: false
   - name: "bravo"
     gecos: "Bravo,,,"
     system: false
     ssh_key_create: true
     ssh_key_download: true
+    upload_my_key: false
   - name: "charlie"
     gecos: "Charlie,,,"
     groups: "sudo,adm"
     system: true  # Create a system user
     ssh_key_create: false
+    upload_my_key: false
   - name: "delta"
     gecos: "Delta,,,"
     groups: "sudo,adm"
     # system: false  # Left unspecified on purpose, default is false
     ssh_key_create: true
+    upload_my_key: false
 second_user_group:
   - name: "foxtrot"
     gecos: "Foxtrot,,,"
     groups: "sudo,adm"
     system: true
     ssh_key_create: true
+    upload_my_key: false
   - name: "golf"
     gecos: "Golf,,,"
     groups: "sudo,adm"
     system: false
     ssh_key_create: false
+    upload_my_key: false
   - name: "hotel"
     system: false
     sudoer: true
+    upload_my_key: false
   - name: "india"
+    passwordless_sudo: true
     system: false
     sudoer: true
-    passwordless_sudo: true
+    upload_my_key: false
 
 third_user_group:
   - name: "juliett"

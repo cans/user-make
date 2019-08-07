@@ -23,7 +23,8 @@ Changed:
 Fixed:
 ~~~~~~
 
-* Fixed 
+* Fixed tests depending on the user running them owning a SSH RSA
+  public key (issue #10)
 
 
 Version v1.1.2 -- 2018-02-20
