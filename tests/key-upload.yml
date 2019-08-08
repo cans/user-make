@@ -25,7 +25,7 @@
       stat:
         path: "{{ '~kilo'| expanduser + '/.ssh/authorized_keys' }}"
       register: kilo_authorizedkeys_file
-      failed_when: not kilo_authorizedkeys_file|success or kilo_authorizedkeys_file.stat.exists
+      failed_when: kilo_authorizedkeys_file is not success or kilo_authorizedkeys_file.stat.exists
 
     - name: "Lima should have an authorized_keys file"
       lineinfile:
@@ -35,4 +35,4 @@
       check_mode: yes
       become: true
       register: lima_authorizedkeys_file
-      failed_when: not lima_authorizedkeys_file|success or lima_authorizedkeys_file|changed
+      failed_when: lima_authorizedkeys_file is not success or lima_authorizedkeys_file is changed

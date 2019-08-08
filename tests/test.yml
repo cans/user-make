@@ -113,7 +113,7 @@
         path: "{{ usermake_sudoer_dir }}/hotel"
       become: true
       register: hotelsudoerfile
-      failed_when: not hotelsudoerfile|success
+      failed_when: hotelsudoerfile is not success
 
     # Checking on India
     - name: "India should have a sudoer file"
@@ -124,7 +124,7 @@
       check_mode: yes
       become: true
       register: indiasudoerfile
-      failed_when: not indiasudoerfile|success or indiasudoerfile|changed
+      failed_when: indiasudoerfile is not success or indiasudoerfile is changed
 
 
 - import_playbook: "key-upload.yml"

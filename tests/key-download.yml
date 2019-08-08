@@ -17,14 +17,14 @@
         module: stat
         path: "{{ usermake_ssh_key_download_dir }}/mike@{{ ansible_hostname }}.pub"
       register: mike_local_key_file
-      failed_when: not mike_local_key_file|success or not mike_local_key_file.stat.exists
+      failed_when: mike_local_key_file is not success or not mike_local_key_file.stat.exists
 
     - name: "November should not have his key downloaded"
       local_action:
         module: stat
         path: "{{ usermake_ssh_key_download_dir }}/november@{{ ansible_hostname }}.pub"
       register: november_local_key_file
-      failed_when: not november_local_key_file|success or november_local_key_file.stat.exists
+      failed_when: november_local_key_file is not success or november_local_key_file.stat.exists
 
     - name: "Clean up local SSH key directory"
       local_action:
@@ -54,14 +54,14 @@
         module: stat
         path: "{{ usermake_ssh_key_download_dir }}/mike@{{ ansible_hostname }}.pub"
       register: mike_local_key_file
-      failed_when: not mike_local_key_file|success or not mike_local_key_file.stat.exists
+      failed_when: mike_local_key_file is not success or not mike_local_key_file.stat.exists
 
     - name: "November should not have had his key downloaded"
       local_action:
         module: stat
         path: "{{ usermake_ssh_key_download_dir }}/november@{{ ansible_hostname }}.pub"
       register: november_local_key_file
-      failed_when: not november_local_key_file|success or november_local_key_file.stat.exists
+      failed_when: november_local_key_file is not success or november_local_key_file.stat.exists
 
     - name:
       local_action:
