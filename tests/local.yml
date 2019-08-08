@@ -1,8 +1,10 @@
 ---
 - name: Bring up docker containers
   hosts: localhost
+  connection: local
   gather_facts: false
   vars:
+    ansible_python_interpreter: "/usr/bin/env python"
     inventory:
       - name: user_make_host_1
         # image: "chrismeyers/centos6"
