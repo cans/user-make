@@ -2,6 +2,8 @@
 - hosts: servers
   name: "Local user key upload test suite"
   remote_user: root
+  vars:
+    test_public_key_file: "{{ playbook_dir }}/ssh/id_rsa.pub"
   vars_files:
     - vars/all.yml
 
@@ -15,6 +17,7 @@
     - role: user-make
       usermake_ssh_key_download: false
       usermake_upload_ssh_key_to_target: false
+      usermake_upload_ssh_key_file: "{{ test_public_key_file }}"
       usermake_users: "{{ forth_user_group }}"
 
   tasks:
@@ -28,7 +31,7 @@
       lineinfile:
         path: "{{ '~lima' | expanduser + '/.ssh/authorized_keys' }}"
         regexp: "^ssh-rsa.*"
-        line: "{{ lookup('file', usermake_upload_ssh_key_file | expanduser) }}"
+        line: "{{ lookup('file', test_public_key_file) }}"
       check_mode: yes
       become: true
       register: lima_authorizedkeys_file
