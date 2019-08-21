@@ -20,8 +20,8 @@
     ssh_key_comment: "{{ item.name + '@' + ansible_hostname if item.ssh_key_create | default(usermake_ssh_key_create) else omit }}"
     ssh_key_passphrase: "{{ item.passphrase|default(usermake_ssh_key_passphrase) if item.ssh_key_create | default(usermake_ssh_key_create) else omit }}"
     ssh_key_bits: "{{ 4096 if item.ssh_key_create | default(usermake_ssh_key_create) else omit }}"
-    state: "{{ item.state | default('present') }}"
-    remove: "{{ item.remove|default(usermake_remove) if item.state | default('present') == 'absent' else omit }}"
+    state: "{{ item.state | default(usermake_state) }}"
+    remove: "{{ item.remove | default(usermake_remove) if item.state | default(usermake_state) == 'absent' else omit }}"
     system: "{{ item.system | default(usermake_system) }}"
   become: yes
   loop: "{{ usermake_users }}"
