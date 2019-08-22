@@ -24,7 +24,7 @@
     remove: "{% if item.state | default('present') == 'absent' %}{{item.remove|default(usermake_remove)}}{% else %}{{omit}}{% endif %}"
     system: "{{ item.system | default(usermake_system) }}"
   become: yes
-  with_items: "{{usermake_users}}"
+  loop: "{{ usermake_users }}"
   register: private_usermake_users_facts
 
 - name: Add local user key to Users account
@@ -34,7 +34,7 @@
     key: "{{ lookup('file', usermake_upload_ssh_key_file|expanduser) }}"
   become: yes
   when: item.state | default('present') == 'present' and item.upload_my_key | default(usermake_upload_ssh_key_to_target)
-  with_items: "{{ usermake_users }}"
+  loop: "{{ usermake_users }}"
 
 - name: Give sudoer privileges to the user
   template:
@@ -42,7 +42,7 @@
     dest: "{{ usermake_sudoer_dir }}/{{ item.name }}"
     mode: "0400"
   when: 'item.sudoer | default(usermake_sudoer)'
-  with_items: "{{ usermake_users }}"
+  loop: "{{ usermake_users }}"
 
 - name: Save Users public keys to local folder
   local_action:
@@ -50,7 +50,7 @@
     content: "{{ item['ssh_public_key'] }}"
     dest: "{{ usermake_ssh_key_download_dir + '/' + item.item.name + '@' + ansible_hostname + '.pub' }}"
   when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(usermake_ssh_key_create) and item.item.ssh_key_download | default(usermake_ssh_key_download)
-  with_items: "{{ private_usermake_users_facts.results }}"
+  loop: "{{ private_usermake_users_facts.results }}"
   become: false  # This local action should never be delegate to another user
 
 - name: Upload Users public key to AWS as EC2 key
@@ -61,7 +61,7 @@
     state: "present"
     region: "{{ usermake_users.region | default(usermake_ssh_key_ec2_region) }}"
   when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(usermake_ssh_key_create) and item.item.ssh_key_upload_to_ec2 | default(usermake_ssh_key_upload_to_ec2)
-  with_items: "{{ private_usermake_users_facts.results }}"
+  loop: "{{ private_usermake_users_facts.results }}"
 
 
 # vim: syntax=yaml:ts=2:sw=2:et:

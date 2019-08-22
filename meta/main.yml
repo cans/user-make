@@ -5,7 +5,7 @@ galaxy_info:
   issue_tracker_url: https://github.com/cans/user-make/issues
   license: GPLv2
 
-  min_ansible_version: 1.2
+  min_ansible_version: 2.5
   github_branch: master
 
   platforms:

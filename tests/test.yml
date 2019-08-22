@@ -154,17 +154,13 @@
       set_fact:
         "{{ item.0 | combine( {'state': item.1, 'remove': true} ) }}"
       register: first_user_group
-      with_nested:
-        - "{{ first_user_group }}"
-        - 'absent'
+      loop: "{{ first_user_group|product(['absent'])|list }}"
 
     - name: "Update tests fixtures to tests deletion"
       set_fact:
         "{{ item.0 | combine( {'state': item.1} ) }}"
       register: second_user_group
-      with_nested:
-        - "{{ second_user_group }}"
-        - 'absent'
+      loop: "{{ second_user_group|product(['absent'])|list }}"
 
   roles:
     # Actually removes the created user and as a bonus ensure role
