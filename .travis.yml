@@ -1,11 +1,15 @@
 ---
 language: python
-python: "2.7"
+python:
+- "2.7"
+- "3.7"
+env:
+  - ANSIBLE_VERSION="2.5.*"
+  - ANSIBLE_VERSION="2.6.*"
+  - ANSIBLE_VERSION="2.7.*"
+  - ANSIBLE_VERSION="2.8.*"
 
-# Use the new container infrastructure
-sudo: required
-
-# Install ansible
+dist: bionic
 addons:
   apt:
     packages:
@@ -14,7 +18,7 @@ addons:
 
 install:
   # Install ansible
-  - pip install ansible
+  - pip install "ansible==${ANSIBLE_VERSION}" ansible-lint
 
   # Check ansible version
   - ansible --version
@@ -25,6 +29,7 @@ install:
   - cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys
 
 script:
+  - ansible-lint tests/*.yml
   # Basic role syntax check
   - ansible-playbook tests/test.yml -i tests/inventory --syntax-check
   - ansible-playbook tests/test.yml -i tests/inventory --connection=local

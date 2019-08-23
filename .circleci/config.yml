@@ -13,7 +13,7 @@ jobs:
       - run:
           name: Create required directories
           command: |
-             mkdir -p $TEST_REPORTS_DIR/ansible-lint.log ~/.virtualenvs ~/.ssh
+             mkdir -p $TEST_REPORTS_DIR ~/.virtualenvs ~/.ssh
              # One needs to concateante here any files that can alter the virtualenv in a way:
              #   - setup.py: for the endpoints installed in $VIRTUAL_ENV/bin
              #   - requirements.txt
@@ -21,9 +21,6 @@ jobs:
              # Since we do a develop install of the code itself (cf. the '-e .' in dev-requirments.txt)
              # it does not matter.
              cat tests/requirements.txt tests/requirements.yml > circleci-requirements.txt
-             # Note that if the workflow is split, you will need to have the file `venv/circleci-requirements.txt`
-             # passed from one build job to the other, either through caching or using workspaces.
-             echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDmmXp3kl731C6y0M+7dzUEyt7bpvhelePj6MSsm0hvoIoHqWtNjFxWGWAAN2Kh1WJL4yxotx3NN6zjofUZG3VK9NiXY29olYhJyvBsFhKCc13MxxCnlbOheney1fuPjlRwPwhYC1TFSyg3IK0JbIQyWFGagnWVQrjDeF/kff2q1Q== WEAK RSA KEY USED FOR TESTS / PRIVATE KEY DELETED" > ~/.ssh/id_rsa.pub
 
       - restore_cache:
           key: v1-dependency-cache-{{ checksum "circleci-requirements.txt" }}
@@ -54,7 +51,9 @@ jobs:
           name: Run tests
           command: |
             . ~/.virtualenvs/user-make/bin/activate
-            tests/run-checks.sh
+            printf '[defaults]\nroles_path=../\nhost_key_checking=false' >ansible.cfg
+            ansible-lint tests/*.yml
+            ansible-playbook -i tests/inventory tests/test.yml --syntax-check
             ansible-playbook -i tests/inventory tests/test.yml --connection=local
 
 
