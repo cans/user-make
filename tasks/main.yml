@@ -11,17 +11,17 @@
 
 - name: Create User(s)
   user:
-    home: "{{item.home_dir|default(usermake_home_base_dir + '/' + item.name)}}"
-    name: "{{item.name}}"
-    comment: "{{item.gecos|default(omit)}}"
+    home: "{{ item.home_dir|default(usermake_home_base_dir + '/' + item.name) }}"
+    name: "{{ item.name }}"
+    comment: "{{ item.gecos|default(omit) }}"
     generate_ssh_key: "{{ item.ssh_key_create | default(usermake_ssh_key_create) }}"
     groups: "{{ item.groups | default(usermake_user_groups) }}"
-    shell: "{{item.shell|default('/bin/bash')}}"
-    ssh_key_comment: "{% if item.ssh_key_create | default(usermake_ssh_key_create) %}{{item.name}}@{{ansible_hostname}}{% else %}{{omit}}{% endif %}"
-    ssh_key_passphrase: "{% if item.ssh_key_create | default(usermake_ssh_key_create) %}{{item.passphrase|default(usermake_ssh_key_passphrase)}}{% else %}{{omit}}{% endif %}"
-    ssh_key_bits: "{% if item.ssh_key_create | default(usermake_ssh_key_create) %}4096{% else %}{{omit}}{% endif %}"
-    state: "{{item.state | default('present')}}"
-    remove: "{% if item.state | default('present') == 'absent' %}{{item.remove|default(usermake_remove)}}{% else %}{{omit}}{% endif %}"
+    shell: "{{ item.shell|default('/bin/bash') }}"
+    ssh_key_comment: "{{ item.name + '@' + ansible_hostname if item.ssh_key_create | default(usermake_ssh_key_create) else omit }}"
+    ssh_key_passphrase: "{{ item.passphrase|default(usermake_ssh_key_passphrase) if item.ssh_key_create | default(usermake_ssh_key_create) else omit }}"
+    ssh_key_bits: "{{ 4096 if item.ssh_key_create | default(usermake_ssh_key_create) else omit }}"
+    state: "{{ item.state | default(usermake_state) }}"
+    remove: "{{ item.remove | default(usermake_remove) if item.state | default(usermake_state) == 'absent' else omit }}"
     system: "{{ item.system | default(usermake_system) }}"
   become: yes
   loop: "{{ usermake_users }}"
@@ -33,7 +33,9 @@
     state: "present"
     key: "{{ lookup('file', usermake_upload_ssh_key_file|expanduser) }}"
   become: yes
-  when: item.state | default('present') == 'present' and item.upload_my_key | default(usermake_upload_ssh_key_to_target)
+  when: >
+    item.state | default('present') == 'present'
+    and item.upload_my_key | default(usermake_upload_ssh_key_to_target)
   loop: "{{ usermake_users }}"
 
 - name: Give sudoer privileges to the user
@@ -49,7 +51,10 @@
     module: copy
     content: "{{ item['ssh_public_key'] }}"
     dest: "{{ usermake_ssh_key_download_dir + '/' + item.item.name + '@' + ansible_hostname + '.pub' }}"
-  when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(usermake_ssh_key_create) and item.item.ssh_key_download | default(usermake_ssh_key_download)
+  when: >
+    item.state | default('present') == 'present'
+    and item.item.ssh_key_create | default(usermake_ssh_key_create)
+    and item.item.ssh_key_download | default(usermake_ssh_key_download)
   loop: "{{ private_usermake_users_facts.results }}"
   become: false  # This local action should never be delegate to another user
 
@@ -60,7 +65,10 @@
     name: "{{ item.item.name + '@' + ansible_hostname }}"
     state: "present"
     region: "{{ usermake_users.region | default(usermake_ssh_key_ec2_region) }}"
-  when: item.state | default('present') == 'present' and item.item.ssh_key_create | default(usermake_ssh_key_create) and item.item.ssh_key_upload_to_ec2 | default(usermake_ssh_key_upload_to_ec2)
+  when: >
+    item.state | default('present') == 'present'
+    and item.item.ssh_key_create | default(usermake_ssh_key_create)
+    and item.item.ssh_key_upload_to_ec2 | default(usermake_ssh_key_upload_to_ec2)
   loop: "{{ private_usermake_users_facts.results }}"
 
 
