@@ -1,0 +1,16 @@
+on: push
+name: user-make Ansible role CI
+jobs:
+  filterBranch:
+    name: Branch Pushed
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: filter branch
+      uses: juankaram/regex-filter@master
+      with:
+        args: refs/heads/[^m][^a][^s][^t][^e][^r].*
+    - name: Lint Ansible Playbook
+      uses: ansible/ansible-lint-action@master
+      env:
+        ACTION_PLAYBOOK_NAME: tests/local.yml
