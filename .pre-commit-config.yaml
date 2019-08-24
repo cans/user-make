@@ -10,5 +10,9 @@ repos:
   hooks:
     - id: ansible-lint
       files: \.(yaml|yml)$
+- repo: https://github.com/adrienverge/yamllint.git
+  rev: v1.17.0
+  hooks:
+    - id: yamllint
 
 # vim: et:sw=2:syntax=yaml:ts=2:
